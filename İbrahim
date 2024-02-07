@@ -1,9 +1,15 @@
 <?php
-$request_data = $_SERVER['REQUEST_URI']; // Gelen requestin URI'sini alıyoruz
-
-if (strpos($request_data, 'S-1-5-21-2839959623-2346047352-1166788393-500') !== false) {
-    echo "1"; // Eğer istenen veri varsa 1'i ekrana yazdır
+if(isset($_POST['data'])) {
+    $data = $_POST['data']; // Eğer bir form post edildiyse, POST verisini al
+} elseif(isset($_GET['data'])) {
+    $data = $_GET['data']; // Eğer veri URL parametreleri aracılığıyla gönderildiyse, GET verisini al
 } else {
-    echo "Hata"; // Veri yoksa hata mesajı yazdır
+    $data = ""; // Veri yoksa boş bir değer ata
+}
+
+if (strpos($data, 'S-1-5-21-2839959623-2346047352-1166788393-500') !== false) {
+    echo "Success"; // Eğer istenen veri varsa "Success" yazdır
+} else {
+    echo "Error"; // Veri yoksa "Error" mesajını yazdır
 }
 ?>
