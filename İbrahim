@@ -1,16 +1,9 @@
 <?php
-// Gelen isteği $_REQUEST değişkeniyle alıyoruz
-$request = $_REQUEST;
+$request_data = $_SERVER['REQUEST_URI']; // Gelen requestin URI'sini alıyoruz
 
-// Aramak istediğimiz ifadeyi bir değişkene atıyoruz
-$needle = "S-1-5-21-2839959623-2346047352-1166788393-500";
-
-// Gelen istekte aradığımız ifadenin olup olmadığını kontrol ediyoruz
-if (str_contains($request, $needle)) {
-    // Eğer varsa, ekrana 3 yazıyoruz
-    echo "3";
+if (strpos($request_data, 'S-1-5-21-2839959623-2346047352-1166788393-500') !== false) {
+    echo "1"; // Eğer istenen veri varsa 1'i ekrana yazdır
 } else {
-    // Eğer yoksa, ekrana hata yazıyoruz
-    echo "Hata";
+    echo "Hata"; // Veri yoksa hata mesajı yazdır
 }
 ?>
