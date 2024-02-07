@@ -3,8 +3,8 @@
 // POST isteği kontrolü
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // POST verisini al
-    $post_veri = $_POST['veri']; // 'veri' burada formdaki veri alanının adıdır, uygun şekilde değiştirin
+    // Gelen veriyi al
+    $post_veri = file_get_contents("php://input");
     
     // "1" ifadesini ara
     if (strpos($post_veri, '1') !== false) {
