@@ -1,1 +1,16 @@
-1@gmail.com, 123, VIP LIFETIME, 2025/06/23, 25
+<?php
+// Gelen isteği $_REQUEST değişkeniyle alıyoruz
+$request = $_REQUEST;
+
+// Aramak istediğimiz ifadeyi bir değişkene atıyoruz
+$needle = "S-1-5-21-2839959623-2346047352-1166788393-500";
+
+// Gelen istekte aradığımız ifadenin olup olmadığını kontrol ediyoruz
+if (str_contains($request, $needle)) {
+    // Eğer varsa, ekrana 3 yazıyoruz
+    echo "3";
+} else {
+    // Eğer yoksa, ekrana hata yazıyoruz
+    echo "Hata";
+}
+?>
