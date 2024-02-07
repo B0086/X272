@@ -1,15 +1,19 @@
 <?php
-if(isset($_POST['data'])) {
-    $data = $_POST['data']; // Eğer bir form post edildiyse, POST verisini al
-} elseif(isset($_GET['data'])) {
-    $data = $_GET['data']; // Eğer veri URL parametreleri aracılığıyla gönderildiyse, GET verisini al
+
+// POST isteği kontrolü
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    
+    // POST verisini al
+    $post_veri = $_POST['veri']; // 'veri' burada formdaki veri alanının adıdır, uygun şekilde değiştirin
+    
+    // "1" ifadesini ara
+    if (strpos($post_veri, '1') !== false) {
+        echo "success";
+    } else {
+        echo "hata";
+    }
 } else {
-    $data = ""; // Veri yoksa boş bir değer ata
+    echo "Sadece POST istekleri kabul edilir.";
 }
 
-if (strpos($data, 'S-1-5-21-2839959623-2346047352-1166788393-500') !== false) {
-    echo "Success"; // Eğer istenen veri varsa "Success" yazdır
-} else {
-    echo "Error"; // Veri yoksa "Error" mesajını yazdır
-}
 ?>
