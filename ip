@@ -1,73 +1,63 @@
 using System;
+using System.IO;
 using System.Net;
-using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        string sourceIpAddress = "45.13.227.206";
-        string destinationIpAddress = "185.205.19.150";
-        int port = 80; // Örnek olarak HTTP portunu kullanıyoruz
+        string listenAddress = "http://localhost:8888/";
 
-        // Yönlendirme işlemi
-        try
+        using (HttpListener listener = new HttpListener())
         {
-            IPAddress sourceAddress = IPAddress.Parse(sourceIpAddress);
-            IPAddress destinationAddress = IPAddress.Parse(destinationIpAddress);
+            listener.Prefixes.Add(listenAddress);
+            listener.Start();
+            Console.WriteLine($"Dinleme başlatıldı. {listenAddress} adresini dinliyor...");
 
-            IPHostEntry hostEntry = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress localIpAddress = hostEntry.AddressList[0];
-
-            // Yönlendirme kurallarını oluşturma
-            var rule = new Route(sourceAddress, destinationAddress, localIpAddress, port);
-
-            // Yönlendirme kurallarını uygulama
-            rule.Apply();
-            
-            Console.WriteLine("IP yönlendirme başarıyla yapıldı.");
+            while (true)
+            {
+                HttpListenerContext context = await listener.GetContextAsync();
+                _ = HandleRequestAsync(context);
+            }
         }
-        catch (Exception ex)
+    }
+
+    static async Task HandleRequestAsync(HttpListenerContext context)
+    {
+        HttpListenerRequest request = context.Request;
+        HttpListenerResponse response = context.Response;
+
+        string requestBody;
+        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
         {
-            Console.WriteLine("IP yönlendirme hatası: " + ex.Message);
+            requestBody = await reader.ReadToEndAsync();
         }
 
-        Console.ReadLine();
-    }
-}
+        Console.WriteLine($"Gelen istek: {request.HttpMethod} {request.Url}");
 
-class Route
-{
-    private readonly IPAddress _sourceAddress;
-    private readonly IPAddress _destinationAddress;
-    private readonly IPAddress _gatewayAddress;
-    private readonly int _port;
+        // İstek üzerinde değişiklikler yapabilirsiniz
+        // Örneğin, hedef IP adresini değiştirebilirsiniz
 
-    public Route(IPAddress sourceAddress, IPAddress destinationAddress, IPAddress gatewayAddress, int port)
-    {
-        _sourceAddress = sourceAddress;
-        _destinationAddress = destinationAddress;
-        _gatewayAddress = gatewayAddress;
-        _port = port;
-    }
+        string modifiedRequestBody = requestBody; // Değişiklik yapmadan önce orijinal isteği kopyalayın
 
-    // Yönlendirme kuralını uygulama
-    public void Apply()
-    {
-        var route = new Route(IPAddress.Any, _destinationAddress, _gatewayAddress, _port);
-        var routeTable = new TcpRouteTable();
-        routeTable.Add(route);
-    }
-}
+        // Yeni hedef IP adresi
+        string newDestinationIpAddress = "185.205.19.150";
 
-class TcpRouteTable
-{
-    public void Add(Route route)
-    {
-        // TCP yönlendirme tablosuna yeni bir yönlendirme kuralı ekleme
-        // Bu kısım işletim sistemi ve platforma bağlı olarak değişebilir
-        // Bu örnek genel bir kavramı göstermektedir
-        // Gerçek işletim sistemi API'lerini kullanarak yönlendirme kuralları eklenmelidir.
-        Console.WriteLine($"Yeni bir yönlendirme kuralı eklendi: {route}");
+        // Hedef IP adresini değiştirme
+        modifiedRequestBody = modifiedRequestBody.Replace("45.13.227.206", newDestinationIpAddress);
+
+        // Yeni isteği hazırlama
+        byte[] responseData = Encoding.UTF8.GetBytes(modifiedRequestBody);
+        response.StatusCode = 200;
+        response.ContentType = "text/plain";
+        response.ContentLength64 = responseData.Length;
+
+        // Yeni isteği gönderme
+        await response.OutputStream.WriteAsync(responseData, 0, responseData.Length);
+        response.Close();
+
+        Console.WriteLine("İstek yönlendirildi ve yanıt gönderildi.");
     }
 }
