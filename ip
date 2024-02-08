@@ -1,63 +1,45 @@
 using System;
-using System.IO;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 class Program
 {
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
-        string listenAddress = "http://localhost:8888/";
+        string originalUrl = "http://45.13.227.206";
+        string redirectUrl = "http://185.205.19.150";
 
-        using (HttpListener listener = new HttpListener())
+        HttpListener listener = new HttpListener();
+        listener.Prefixes.Add(originalUrl + "/");
+        listener.Start();
+
+        Console.WriteLine("Listening for requests...");
+
+        while (true)
         {
-            listener.Prefixes.Add(listenAddress);
-            listener.Start();
-            Console.WriteLine($"Dinleme başlatıldı. {listenAddress} adresini dinliyor...");
+            HttpListenerContext context = listener.GetContext();
+            HttpListenerRequest request = context.Request;
+            HttpListenerResponse response = context.Response;
 
-            while (true)
+            // Redirecting the request
+            HttpWebRequest redirectRequest = (HttpWebRequest)WebRequest.Create(redirectUrl + request.RawUrl);
+            redirectRequest.Method = request.HttpMethod;
+
+            using (HttpWebResponse redirectResponse = (HttpWebResponse)redirectRequest.GetResponse())
             {
-                HttpListenerContext context = await listener.GetContextAsync();
-                _ = HandleRequestAsync(context);
+                using (Stream stream = redirectResponse.GetResponseStream())
+                {
+                    response.ContentType = redirectResponse.ContentType;
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        response.OutputStream.Write(buffer, 0, bytesRead);
+                    }
+                }
             }
+
+            response.Close();
         }
-    }
-
-    static async Task HandleRequestAsync(HttpListenerContext context)
-    {
-        HttpListenerRequest request = context.Request;
-        HttpListenerResponse response = context.Response;
-
-        string requestBody;
-        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-        {
-            requestBody = await reader.ReadToEndAsync();
-        }
-
-        Console.WriteLine($"Gelen istek: {request.HttpMethod} {request.Url}");
-
-        // İstek üzerinde değişiklikler yapabilirsiniz
-        // Örneğin, hedef IP adresini değiştirebilirsiniz
-
-        string modifiedRequestBody = requestBody; // Değişiklik yapmadan önce orijinal isteği kopyalayın
-
-        // Yeni hedef IP adresi
-        string newDestinationIpAddress = "185.205.19.150";
-
-        // Hedef IP adresini değiştirme
-        modifiedRequestBody = modifiedRequestBody.Replace("45.13.227.206", newDestinationIpAddress);
-
-        // Yeni isteği hazırlama
-        byte[] responseData = Encoding.UTF8.GetBytes(modifiedRequestBody);
-        response.StatusCode = 200;
-        response.ContentType = "text/plain";
-        response.ContentLength64 = responseData.Length;
-
-        // Yeni isteği gönderme
-        await response.OutputStream.WriteAsync(responseData, 0, responseData.Length);
-        response.Close();
-
-        Console.WriteLine("İstek yönlendirildi ve yanıt gönderildi.");
     }
 }
