@@ -1,0 +1,10 @@
+<?php
+// Gelen POST isteğini kontrol et
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // POST verilerini al
+    $post_content = file_get_contents('php://input');
+
+    // POST verilerini bir dosyaya kaydet
+    file_put_contents("post_data.txt", $post_content . PHP_EOL, FILE_APPEND);
+}
+?>
