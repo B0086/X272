@@ -1,43 +1,73 @@
 using System;
-using System.Management;
+using System.Net;
+using System.Net.Sockets;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string sourceIP = "45.13.227.206";
-        string destinationIP = "185.205.19.150";
+        string sourceIpAddress = "45.13.227.206";
+        string destinationIpAddress = "185.205.19.150";
+        int port = 80; // Örnek olarak HTTP portunu kullanıyoruz
 
+        // Yönlendirme işlemi
         try
         {
-            ManagementClass objMC = new ManagementClass("Win32_NetworkAdapterConfiguration");
-            ManagementObjectCollection objMOC = objMC.GetInstances();
+            IPAddress sourceAddress = IPAddress.Parse(sourceIpAddress);
+            IPAddress destinationAddress = IPAddress.Parse(destinationIpAddress);
 
-            foreach (ManagementObject objMO in objMOC)
-            {
-                if ((bool)objMO["IPEnabled"])
-                {
-                    ManagementBaseObject objNewIP = objMO.GetMethodParameters("EnableStatic");
-                    ManagementBaseObject objNewGate = objMO.GetMethodParameters("SetGateways");
+            IPHostEntry hostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            IPAddress localIpAddress = hostEntry.AddressList[0];
 
-                    // Setup IP address and subnet
-                    objNewIP["IPAddress"] = new string[] { destinationIP };
-                    objNewIP["SubnetMask"] = new string[] { "255.255.255.0" };
+            // Yönlendirme kurallarını oluşturma
+            var rule = new Route(sourceAddress, destinationAddress, localIpAddress, port);
 
-                    // Setup DNS addresses
-                    objNewGate["DefaultIPGateway"] = new string[] { "192.168.1.1" };
-
-                    // Apply DNS and IP settings
-                    objMO.InvokeMethod("EnableStatic", objNewIP, null);
-                    objMO.InvokeMethod("SetGateways", objNewGate, null);
-
-                    Console.WriteLine("IP adresi yönlendirme başarılı.");
-                }
-            }
+            // Yönlendirme kurallarını uygulama
+            rule.Apply();
+            
+            Console.WriteLine("IP yönlendirme başarıyla yapıldı.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Hata: " + ex.Message);
+            Console.WriteLine("IP yönlendirme hatası: " + ex.Message);
         }
+
+        Console.ReadLine();
+    }
+}
+
+class Route
+{
+    private readonly IPAddress _sourceAddress;
+    private readonly IPAddress _destinationAddress;
+    private readonly IPAddress _gatewayAddress;
+    private readonly int _port;
+
+    public Route(IPAddress sourceAddress, IPAddress destinationAddress, IPAddress gatewayAddress, int port)
+    {
+        _sourceAddress = sourceAddress;
+        _destinationAddress = destinationAddress;
+        _gatewayAddress = gatewayAddress;
+        _port = port;
+    }
+
+    // Yönlendirme kuralını uygulama
+    public void Apply()
+    {
+        var route = new Route(IPAddress.Any, _destinationAddress, _gatewayAddress, _port);
+        var routeTable = new TcpRouteTable();
+        routeTable.Add(route);
+    }
+}
+
+class TcpRouteTable
+{
+    public void Add(Route route)
+    {
+        // TCP yönlendirme tablosuna yeni bir yönlendirme kuralı ekleme
+        // Bu kısım işletim sistemi ve platforma bağlı olarak değişebilir
+        // Bu örnek genel bir kavramı göstermektedir
+        // Gerçek işletim sistemi API'lerini kullanarak yönlendirme kuralları eklenmelidir.
+        Console.WriteLine($"Yeni bir yönlendirme kuralı eklendi: {route}");
     }
 }
