@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 
 class Program
@@ -9,38 +11,54 @@ class Program
         string originalUrl = "http://45.13.227.206";
         string redirectUrl = "http://185.205.19.150";
 
-        // HTTP isteklerini dinlemek için yeni bir HTTP sunucusu oluşturun
-        HttpListener listener = new HttpListener();
-        listener.Prefixes.Add(originalUrl + "/");
+        // TCP dinleyici oluştur
+        TcpListener listener = new TcpListener(IPAddress.Any, 80);
         listener.Start();
 
         Console.WriteLine("Listening for requests...");
 
         while (true)
         {
-            HttpListenerContext context = listener.GetContext();
-            HttpListenerRequest request = context.Request;
-            HttpListenerResponse response = context.Response;
-
-            // Yönlendirme işlemi
-            HttpWebRequest redirectRequest = (HttpWebRequest)WebRequest.Create(redirectUrl + request.RawUrl);
-            redirectRequest.Method = request.HttpMethod;
-
-            using (HttpWebResponse redirectResponse = (HttpWebResponse)redirectRequest.GetResponse())
+            // Bağlantı kabul et
+            TcpClient client = listener.AcceptTcpClient();
+            Thread thread = new Thread(() =>
             {
-                using (var stream = redirectResponse.GetResponseStream())
+                using (NetworkStream stream = client.GetStream())
+                using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
                 {
-                    response.ContentType = redirectResponse.ContentType;
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    // İstek satırını oku
+                    string requestLine = reader.ReadLine();
+                    if (!string.IsNullOrEmpty(requestLine))
                     {
-                        response.OutputStream.Write(buffer, 0, bytesRead);
+                        // İstek satırını parçala
+                        string[] parts = requestLine.Split(' ');
+                        string method = parts[0];
+                        string url = parts[1];
+
+                        // Yönlendirme işlemi
+                        if (url.StartsWith(originalUrl))
+                        {
+                            string newUrl = redirectUrl + url.Substring(originalUrl.Length);
+                            writer.WriteLine("HTTP/1.1 302 Found");
+                            writer.WriteLine($"Location: {newUrl}");
+                            writer.WriteLine();
+                            Console.WriteLine($"Redirected: {url} to {newUrl}");
+                        }
+                        else
+                        {
+                            // Yönlendirme yapılacak URL değilse, isteği ileterek normal işlem devam ettirilir.
+                            writer.WriteLine("HTTP/1.1 200 OK");
+                            writer.WriteLine("Content-Type: text/html; charset=utf-8");
+                            writer.WriteLine();
+                            writer.WriteLine("<!DOCTYPE html><html><body><h1>Hello, World!</h1></body></html>");
+                            Console.WriteLine($"Processed: {url}");
+                        }
                     }
                 }
-            }
-
-            response.Close();
+                client.Close();
+            });
+            thread.Start();
         }
     }
 }
