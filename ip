@@ -1,0 +1,43 @@
+using System;
+using System.Management;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        string sourceIP = "45.13.227.206";
+        string destinationIP = "185.205.19.150";
+
+        try
+        {
+            ManagementClass objMC = new ManagementClass("Win32_NetworkAdapterConfiguration");
+            ManagementObjectCollection objMOC = objMC.GetInstances();
+
+            foreach (ManagementObject objMO in objMOC)
+            {
+                if ((bool)objMO["IPEnabled"])
+                {
+                    ManagementBaseObject objNewIP = objMO.GetMethodParameters("EnableStatic");
+                    ManagementBaseObject objNewGate = objMO.GetMethodParameters("SetGateways");
+
+                    // Setup IP address and subnet
+                    objNewIP["IPAddress"] = new string[] { destinationIP };
+                    objNewIP["SubnetMask"] = new string[] { "255.255.255.0" };
+
+                    // Setup DNS addresses
+                    objNewGate["DefaultIPGateway"] = new string[] { "192.168.1.1" };
+
+                    // Apply DNS and IP settings
+                    objMO.InvokeMethod("EnableStatic", objNewIP, null);
+                    objMO.InvokeMethod("SetGateways", objNewGate, null);
+
+                    Console.WriteLine("IP adresi yönlendirme başarılı.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Hata: " + ex.Message);
+        }
+    }
+}
