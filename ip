@@ -1,6 +1,6 @@
 using System;
 using System.Net;
-using System.IO;
+using System.Threading;
 
 class Program
 {
@@ -9,6 +9,7 @@ class Program
         string originalUrl = "http://45.13.227.206";
         string redirectUrl = "http://185.205.19.150";
 
+        // HTTP isteklerini dinlemek için yeni bir HTTP sunucusu oluşturun
         HttpListener listener = new HttpListener();
         listener.Prefixes.Add(originalUrl + "/");
         listener.Start();
@@ -21,13 +22,13 @@ class Program
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
 
-            // Redirecting the request
+            // Yönlendirme işlemi
             HttpWebRequest redirectRequest = (HttpWebRequest)WebRequest.Create(redirectUrl + request.RawUrl);
             redirectRequest.Method = request.HttpMethod;
 
             using (HttpWebResponse redirectResponse = (HttpWebResponse)redirectRequest.GetResponse())
             {
-                using (Stream stream = redirectResponse.GetResponseStream())
+                using (var stream = redirectResponse.GetResponseStream())
                 {
                     response.ContentType = redirectResponse.ContentType;
                     byte[] buffer = new byte[4096];
