@@ -6,9 +6,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Gelen veriyi al
     $post_veri = file_get_contents("php://input");
     
-    // "1" ifadesini ara
-    if (strpos($post_veri, '1') !== false) {
-        echo "success";
+    // "1", "2", "3" veya "4" ifadesini ara
+    if (strpos($post_veri, '1') !== false || strpos($post_veri, '2') !== false || strpos($post_veri, '3') !== false || strpos($post_veri, '4') !== false) {
+        // JSON dosyasını oku ve içeriğini yazdır
+        $dosya_icerigi = file_get_contents("dosya.json"); // JSON dosyasının adı
+        echo $dosya_icerigi;
     } else {
         echo "hata";
     }
