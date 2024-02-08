@@ -1,53 +1,36 @@
 using System;
-using System.Net;
+using System.Diagnostics;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string originalUrl = "http://45.13.227.206";
-        string redirectUrl = "http://185.205.19.150";
+        string sourceIpAddress = "45.13.227.206";
+        string destinationIpAddress = "185.205.19.150";
 
-        HttpListener listener = new HttpListener();
-        listener.Prefixes.Add(originalUrl + "/");
+        string command = $"New-NetRoute -DestinationPrefix {sourceIpAddress} -NextHop {destinationIpAddress}";
         
-        try
-        {
-            listener.Start();
-            Console.WriteLine("Listening for requests...");
+        ExecutePowerShellCommand(command);
+    }
 
-            while (true)
+    static void ExecutePowerShellCommand(string command)
+    {
+        ProcessStartInfo psi = new ProcessStartInfo()
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-Command \"{command}\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true
+        };
+
+        using (Process process = Process.Start(psi))
+        {
+            if (process != null)
             {
-                HttpListenerContext context = listener.GetContext();
-                ThreadPool.QueueUserWorkItem((state) =>
-                {
-                    HttpListenerRequest request = context.Request;
-                    HttpListenerResponse response = context.Response;
-
-                    // Yönlendirme işlemi
-                    if (request.Url.AbsoluteUri.StartsWith(originalUrl))
-                    {
-                        string newUrl = redirectUrl + request.Url.AbsolutePath;
-                        response.StatusCode = (int)HttpStatusCode.Found;
-                        response.Redirect(newUrl);
-                        Console.WriteLine($"Redirected: {request.Url.AbsoluteUri} to {newUrl}");
-                    }
-                    else
-                    {
-                        response.StatusCode = (int)HttpStatusCode.NotFound;
-                    }
-
-                    response.Close();
-                });
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
             }
-        }
-        catch (HttpListenerException ex)
-        {
-            Console.WriteLine($"HttpListenerException occurred: {ex.Message}");
-        }
-        finally
-        {
-            listener.Stop();
         }
     }
 }
