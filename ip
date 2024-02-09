@@ -1,36 +1,28 @@
-using System;
-using System.Diagnostics;
+using Fiddler;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        string sourceIpAddress = "45.13.227.206";
-        string destinationIpAddress = "185.205.19.150";
+        // Fiddler'in başlatılması
+        Fiddler.FiddlerApplication.Startup(8877, true, true);
 
-        string command = $"New-NetRoute -DestinationPrefix {sourceIpAddress} -NextHop {destinationIpAddress}";
-        
-        ExecutePowerShellCommand(command);
+        // Tüm isteklerin dinlenmesi
+        Fiddler.FiddlerApplication.BeforeRequest += FiddlerApplication_BeforeRequest;
+
+        Console.WriteLine("Fiddler başlatıldı. Çıkmak için bir tuşa basın.");
+        Console.ReadKey();
+
+        // Fiddler'in kapatılması
+        Fiddler.FiddlerApplication.Shutdown();
     }
 
-    static void ExecutePowerShellCommand(string command)
+    private static void FiddlerApplication_BeforeRequest(Session session)
     {
-        ProcessStartInfo psi = new ProcessStartInfo()
+        // Örnek olarak URL'yi güncelleme
+        if (session.fullUrl.Contains("example.com"))
         {
-            FileName = "powershell.exe",
-            Arguments = $"-Command \"{command}\"",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true
-        };
-
-        using (Process process = Process.Start(psi))
-        {
-            if (process != null)
-            {
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
-            }
+            session.fullUrl = session.fullUrl.Replace("example.com", "updated.example.com");
         }
     }
 }
