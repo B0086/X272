@@ -1,25 +1,18 @@
-from flask import Flask, redirect, request
-import requests
+from mitmproxy import http
 
-app = Flask(__name__)
+def request(flow: http.HTTPFlow) -> None:
+    # Hedef URL'yi değiştirme
+    if flow.request.host == "hedef_url.com":
+        flow.request.host = "yeni_hedef_url.com"
+        flow.request.port = 80  # Hedef portu isteğe bağlı olarak değiştirin
+        # İstek metnini değiştirme (isteğe bağlı)
+        flow.request.text = flow.request.text.replace(b"hedef_kaynak", b"yeni_kaynak")
 
-# Ana URL'e gelen istekleri yönlendirme fonksiyonu
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def redirect_request(path):
-    # Yönlendirilecek hedef URL
-    target_url = "http://185.205.19.150/" + path
-    # Gelen isteği yeniden oluşturarak hedef URL'e yönlendirme
-    response = requests.request(
-        method=request.method,
-        url=target_url,
-        headers={key: value for (key, value) in request.headers if key != 'Host'},
-        data=request.get_data(),
-        cookies=request.cookies,
-        allow_redirects=False
-    )
-    # Hedef URL'den gelen cevabı kullanıcıya ileterek yönlendirme gerçekleştirme
-    return response.content, response.status_code, response.headers.items()
+def response(flow: http.HTTPFlow) -> None:
+    # Yanıtı değiştirme
+    if flow.request.host == "hedef_url.com":
+        flow.response.text = flow.response.text.replace(b"hedef_yanıt", b"yeni_yanıt")
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80)
+# Örnek olarak mitmproxy'yi çalıştırma
+from mitmproxy.tools.main import mitmdump
+mitmdump(["-s", __file__])
