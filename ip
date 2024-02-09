@@ -1,28 +1,25 @@
-using Fiddler;
+from flask import Flask, redirect, request
+import requests
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        // Fiddler'in başlatılması
-        Fiddler.FiddlerApplication.Startup(8877, true, true);
+app = Flask(__name__)
 
-        // Tüm isteklerin dinlenmesi
-        Fiddler.FiddlerApplication.BeforeRequest += FiddlerApplication_BeforeRequest;
+# Ana URL'e gelen istekleri yönlendirme fonksiyonu
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def redirect_request(path):
+    # Yönlendirilecek hedef URL
+    target_url = "http://185.205.19.150/" + path
+    # Gelen isteği yeniden oluşturarak hedef URL'e yönlendirme
+    response = requests.request(
+        method=request.method,
+        url=target_url,
+        headers={key: value for (key, value) in request.headers if key != 'Host'},
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False
+    )
+    # Hedef URL'den gelen cevabı kullanıcıya ileterek yönlendirme gerçekleştirme
+    return response.content, response.status_code, response.headers.items()
 
-        Console.WriteLine("Fiddler başlatıldı. Çıkmak için bir tuşa basın.");
-        Console.ReadKey();
-
-        // Fiddler'in kapatılması
-        Fiddler.FiddlerApplication.Shutdown();
-    }
-
-    private static void FiddlerApplication_BeforeRequest(Session session)
-    {
-        // Örnek olarak URL'yi güncelleme
-        if (session.fullUrl.Contains("example.com"))
-        {
-            session.fullUrl = session.fullUrl.Replace("example.com", "updated.example.com");
-        }
-    }
-}
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=80)
