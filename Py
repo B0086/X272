@@ -1,0 +1,16 @@
+from collections import Counter
+
+def en_cok_sonraki_sayilar(liste, sayi, n):
+    index = liste.index(sayi)
+    sonraki_sayilar = liste[index+1:]
+    counter = Counter(sonraki_sayilar)
+    en_cok_sayilar = counter.most_common(n)
+    return [sayi for sayi, _ in en_cok_sayilar]
+
+# Örnek kullanım
+liste = [3, 5, 8, 9, 3, 2, 32, 17, 6, 32, 12, 8, 32, 6, 32, 5]  # Örnek liste
+sayi = 32  # Aranan sayı
+n = 10  # En çok tekrar eden sonraki sayıların sayısı
+
+sonuclar = en_cok_sonraki_sayilar(liste, sayi, n)
+print(f"{sayi} sayısından sonra en çok tekrar eden {n} sayı: {sonuclar}")
