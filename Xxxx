@@ -1,0 +1,35 @@
+import pyautogui
+import pyscreenshot as ImageGrab
+import time
+
+def find_green_flowers_and_click(region=None):
+    # Renk değerini belirleyelim: 65280 yeşil için (RGB olarak (0, 255, 0))
+    target_color = (0, 255, 0)
+
+    # Ekran görüntüsü al
+    if region:
+        screenshot = ImageGrab.grab(bbox=region)  # Sadece belirli bir bölgeyi tarar
+    else:
+        screenshot = ImageGrab.grab()  # Tüm ekranı tarar
+
+    width, height = screenshot.size
+
+    # Pikselleri tarar
+    for x in range(width):
+        for y in range(height):
+            pixel = screenshot.getpixel((x, y))
+            if pixel == target_color:
+                # Ekran koordinatlarını bulmak için x ve y değerlerini hesapla
+                screen_x = x + (region[0] if region else 0)
+                screen_y = y + (region[1] if region else 0)
+                # Tıklama yap
+                pyautogui.click(screen_x, screen_y)
+                time.sleep(0.1)  # Her tıklama arasında küçük bir gecikme
+
+if __name__ == "__main__":
+    try:
+        while True:
+            find_green_flowers_and_click()
+            time.sleep(1)  # Her taramadan sonra kısa bir bekleme süresi
+    except KeyboardInterrupt:
+        print("Bot durduruldu.")
