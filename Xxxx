@@ -9,18 +9,19 @@ def find_and_click_green_flowers(region=None):
     target_color = np.array([0, 255, 0], dtype=np.uint8)
     color_tolerance = np.array([10, 10, 10], dtype=np.uint8)  # Renk toleransı
 
+    lower_bound = target_color - color_tolerance
+    upper_bound = target_color + color_tolerance
+
     with mss.mss() as sct:
         while True:
             # Ekran görüntüsünü al
             screenshot = sct.grab(region) if region else sct.grab(sct.monitors[1])
             img = np.array(screenshot)
 
-            # Renk uzayını dönüştürme (mss BGR formatında döner)
+            # Renk uzayını dönüştürme (mss BGRA formatında döner, BGR'ye çeviriyoruz)
             img_bgr = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
             # Renk maskesi oluştur
-            lower_bound = target_color - color_tolerance
-            upper_bound = target_color + color_tolerance
             mask = cv2.inRange(img_bgr, lower_bound, upper_bound)
             coords = cv2.findNonZero(mask)
 
