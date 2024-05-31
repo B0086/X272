@@ -1,35 +1,45 @@
 import pyautogui
-import pyscreenshot as ImageGrab
+import mss
+import numpy as np
+import cv2
 import time
 
-def find_green_flowers_and_click(region=None):
-    # Renk değerini belirleyelim: 65280 yeşil için (RGB olarak (0, 255, 0))
-    target_color = (0, 255, 0)
+def find_and_click_green_flowers(region=None):
+    # Renk değerini belirleyelim (BGR formatında: (0, 255, 0) - yeşil)
+    target_color = np.array([0, 255, 0], dtype=np.uint8)
+    color_tolerance = 10  # Renk toleransı
 
-    # Ekran görüntüsü al
-    if region:
-        screenshot = ImageGrab.grab(bbox=region)  # Sadece belirli bir bölgeyi tarar
-    else:
-        screenshot = ImageGrab.grab()  # Tüm ekranı tarar
+    with mss.mss() as sct:
+        while True:
+            # Ekran görüntüsünü al
+            screenshot = sct.grab(region) if region else sct.grab(sct.monitors[1])
+            img = np.array(screenshot)
 
-    width, height = screenshot.size
+            # Renk maskesi oluştur
+            mask = cv2.inRange(img, target_color - color_tolerance, target_color + color_tolerance)
+            coords = cv2.findNonZero(mask)
 
-    # Pikselleri tarar
-    for x in range(width):
-        for y in range(height):
-            pixel = screenshot.getpixel((x, y))
-            if pixel == target_color:
-                # Ekran koordinatlarını bulmak için x ve y değerlerini hesapla
-                screen_x = x + (region[0] if region else 0)
-                screen_y = y + (region[1] if region else 0)
-                # Tıklama yap
-                pyautogui.click(screen_x, screen_y)
-                time.sleep(0.1)  # Her tıklama arasında küçük bir gecikme
+            if coords is not None:
+                for pt in coords:
+                    x, y = pt[0][0], pt[0][1]
+                    screen_x = x + (region['left'] if region else 0)
+                    screen_y = y + (region['top'] if region else 0)
+                    # Tıklama yap
+                    pyautogui.click(screen_x, screen_y)
+                    time.sleep(0.1)  # Her tıklama arasında küçük bir gecikme
+
+            time.sleep(0.1)  # Her taramadan sonra kısa bir bekleme süresi
 
 if __name__ == "__main__":
+    # Ekran bölgesini belirleyin (örneğin, ekranın orta ve alt kısmı)
+    region = {
+        'top': 400, 
+        'left': 500, 
+        'width': 1000, 
+        'height': 500
+    }  # Bu değeri oyun ekranınıza göre güncelleyin
+
     try:
-        while True:
-            find_green_flowers_and_click()
-            time.sleep(1)  # Her taramadan sonra kısa bir bekleme süresi
+        find_and_click_green_flowers(region)
     except KeyboardInterrupt:
         print("Bot durduruldu.")
