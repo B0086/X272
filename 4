@@ -1,17 +1,6 @@
-#include <iostream>
-#include <cstdlib> // system() fonksiyonunu kullanmak için
-#include <cstdio>  // popen() fonksiyonunu kullanmak için
-#include <string>
-
-using namespace std;
-
-int main() {
-    // Dosyayı indirme işlemi
-    system("curl -O http://example.com/dosya.exe"); // Örnek olarak curl kullanıldı, indirme yönteminize göre değişebilir
-
-    // İndirilen dosyayı çalıştırma işlemi
-    string dosyaAdi = "dosya.exe"; // İndirilen dosyanın adı
-    string komut = dosyaAdi + " argumanlar"; // Dosyayı çalıştırmak için gereken komut
-    system(komut.c_str()); // Dosyayı çalıştırma
-    return 0;
-}
+public static api KeyAuthApp = new api(
+    name: "AuthX",
+    ownerid: "lEJJLk1AYf",
+    secret: "6156e1d8d99df868c144b05f1fbda5fc5a2036609f3392e27ae0e288dc9acea5",
+    version: "1.0"
+);
