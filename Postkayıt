@@ -17,13 +17,14 @@ int main() {
     }
     memcpy(lpBaseAddress, exeData, sizeof(exeData));
 
-    // Başlatma parametresi
-    LPSTR parameters = "XXXX";
+    // Komut satırı argümanı (başlatma parametresi)
+    LPSTR cmdargumanı = "XXXX";
 
     // Geçici exe dosyasını çalıştırma
     STARTUPINFOA startupInfo = { sizeof(startupInfo) };
     PROCESS_INFORMATION processInfo;
-    if (!CreateProcessA(NULL, reinterpret_cast<LPSTR>(lpBaseAddress), NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo)) {
+    std::string commandLine = reinterpret_cast<char*>(lpBaseAddress) + " " + cmdargumanı;
+    if (!CreateProcessA(NULL, const_cast<LPSTR>(commandLine.c_str()), NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo)) {
         std::cerr << "Exe çalıştırılamadı!" << std::endl;
         return 1;
     }
