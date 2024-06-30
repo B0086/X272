@@ -9,15 +9,34 @@ unsigned char exeData[] = {
 };
 
 int main() {
-    // Başlatma parametresi
-    LPCSTR parameters = "XXXX";
+    // Bellekte exe dosyasını oluştur
+    LPVOID lpBaseAddress = VirtualAlloc(NULL, sizeof(exeData), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (lpBaseAddress == NULL) {
+        std::cerr << "Bellek ayıramadı!" << std::endl;
+        return 1;
+    }
+    memcpy(lpBaseAddress, exeData, sizeof(exeData));
 
-    // Bellekteki exe dosyasını çalıştır
-    HINSTANCE hInstance = ShellExecuteA(NULL, "open", reinterpret_cast<LPCSTR>(&exeData), parameters, NULL, SW_SHOWNORMAL);
-    if ((int)hInstance <= 32) {
+    // Başlatma parametresi
+    LPSTR parameters = "XXXX";
+
+    // Geçici exe dosyasını çalıştırma
+    STARTUPINFOA startupInfo = { sizeof(startupInfo) };
+    PROCESS_INFORMATION processInfo;
+    if (!CreateProcessA(NULL, reinterpret_cast<LPSTR>(lpBaseAddress), NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo)) {
         std::cerr << "Exe çalıştırılamadı!" << std::endl;
         return 1;
     }
+
+    // Bekleme işlemi
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+    // Handles temizleme
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
+
+    // Belleği serbest bırak
+    VirtualFree(lpBaseAddress, sizeof(exeData), MEM_RELEASE);
 
     return 0;
 }
