@@ -1,10 +1,61 @@
-public static api KeyAuthApp = new api(
-    name: "AuthX", // Application Name
-    ownerid: "W2TsJEd5Bd", // Owner ID
-    secret: "f480dac12fbf4d0a4923208f559688315ce8e9bfa582d45f78e3eae4530603e8", // Application Secret
-    version: "1.0" // Application Version /*
-    //path: @"Your_Path_Here" // (OPTIONAL) see tutorial here https://www.youtube.com/watch?v=I9rxt821gMk&t=1s
-);
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include <windows.h>
+#include <tlhelp32.h>
 
+bool isProcessRunning(const std::string& processName) {
+    bool exists = false;
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
 
-6600340038003000640061006300310032006600620066003400640030006100340039003200330032003000380066003500350039003600380038003300310035006300650038006500390062006600610035003800320064003400350066003700380065003300650061006500340035003000360030003300650038
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+
+    if (Process32First(snapshot, &entry)) {
+        do {
+            std::string exeFile = entry.szExeFile;
+            std::transform(exeFile.begin(), exeFile.end(), exeFile.begin(), ::tolower);
+            if (exeFile.find("pid") != std::string::npos) {
+                exists = true;
+                break;
+            }
+        } while (Process32Next(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return exists;
+}
+
+void killProcess(const std::string& processName) {
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
+
+    if (Process32First(snapshot, &entry)) {
+        do {
+            std::string exeFile = entry.szExeFile;
+            std::transform(exeFile.begin(), exeFile.end(), exeFile.begin(), ::tolower);
+            if (exeFile.find("pid") != std::string::npos) {
+                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, entry.th32ProcessID);
+                if (hProcess != NULL) {
+                    TerminateProcess(hProcess, 0);
+                    CloseHandle(hProcess);
+                }
+            }
+        } while (Process32Next(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+}
+
+int main() {
+    if (isProcessRunning("pid")) {
+        std::cout << "'PID' iceren bir proses bulundu. Kapatiliyor..." << std::endl;
+        killProcess("pid");
+        std::cout << "Proses basariyla kapatildi." << std::endl;
+    } else {
+        std::cout << "'PID' iceren bir proses bulunamadi." << std::endl;
+    }
+
+    return 0;
+}
