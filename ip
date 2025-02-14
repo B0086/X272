@@ -1,18 +1,1 @@
-from mitmproxy import http
 
-def request(flow: http.HTTPFlow) -> None:
-    # Hedef URL'yi değiştirme
-    if flow.request.host == "hedef_url.com":
-        flow.request.host = "yeni_hedef_url.com"
-        flow.request.port = 80  # Hedef portu isteğe bağlı olarak değiştirin
-        # İstek metnini değiştirme (isteğe bağlı)
-        flow.request.text = flow.request.text.replace(b"hedef_kaynak", b"yeni_kaynak")
-
-def response(flow: http.HTTPFlow) -> None:
-    # Yanıtı değiştirme
-    if flow.request.host == "hedef_url.com":
-        flow.response.text = flow.response.text.replace(b"hedef_yanıt", b"yeni_yanıt")
-
-# Örnek olarak mitmproxy'yi çalıştırma
-from mitmproxy.tools.main import mitmdump
-mitmdump(["-s", __file__])
